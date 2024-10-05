@@ -1,48 +1,27 @@
+#Запускати тільки у консолі Windows
+
 import time as t
 
-def to_Cels(txt):
-    number = ""
-    temp_type = ""
-
-    for i in range(len(txt)):
-        if txt[i].isdigit() or (txt[i] == '-' and not number):
-            number += txt[i]
-        else:
-            temp_type += txt[i]
-
-    if not number:
-        raise ValueError("Температура не вказана.")
-    
-    number = int(number)
-
-    perenosy = {
-        "C": number,
-        "K": number + 273.15,
-        "F": (number - 32) * (5 / 9)
-    }
-
-    temp_type = temp_type.upper()
-    if temp_type not in perenosy:
-        raise ValueError(f"Неправильний тип температури: '{temp_type}'. Має бути 'C', 'K' або 'F'.")
-    
-    res = perenosy[temp_type]
-    return round(res, 11)
+def to_temp(number):
+    return number*30
+def to_speed(number):
+    return number*200
 
 def calculate_time(rezhim, temperature, speed):
     if speed <= 0:
-        raise ValueError("Швидкість обертів пральної машини має бути більше 0.")
+        raise ValueError("Швидкiсть обертів пральноi машини має бути більше 0.")
     
-    rezhimi = {
-        "синтетика": (temperature - 30) * 0.7 + 65,
-        "бавовна": (temperature - 30) + 79,
-        "швидке прання": temperature,
-        "делікатна": (temperature - 30) * 0.8 + 55,
-        "полоскання": 20,
-        "віджим": 0.02 * speed
-    }
+    rezhimi = [
+        (temperature - 30) * 0.7 + 65,
+        (temperature - 30) + 79,
+         temperature,
+        (temperature - 30) * 0.8 + 55,
+        20,
+        0.02 * speed
+    ]
     
-    if rezhim in rezhimi:
-        ret = rezhimi[rezhim]
+    if rezhim < 7:
+        ret = rezhimi[rezhim-1]
     else:
         raise ValueError(f"{rezhim} is not supported")
         
@@ -53,30 +32,32 @@ def countdown(seconds):
         mins, secs = divmod(seconds, 60)
         timer = '{:02d}:{:02d}'.format(mins, secs)
         print(timer, end='\r')
-        t.sleep(1)
+        print( end='')
+        t.sleep(.1)
         seconds -= 1
-        
-    input("Стирка закінчилася. Натисніть Enter, щоб розпочати нову стирку")
-
-while True:
-    rezhim = input("Оберіть режим прання: синтетика, бавовна, делікатна, швидке прання, полоскання, віджим  ").lower()
-    temp_input = input("На якій темературі ви будете стирати "+
-    "(за форматом (число + тип, напр. '30C', '300K', '86F'))?:  ")
+    print("00:00")
+    print("\n")
     
-    try:
-        obert_speed = int(input(
-            "На якій швидкості ви будете стирати?:  ")
-            )
-    except ValueError:
-        print("Будь ласка, введіть числове значення для швидкості.")
-        continue
 
-    try:
-        temp = to_Cels(temp_input)
+prev_mode = 6
+while True:
+    if prev_mode == 6:
+        rezhim = int(input("Оберiть режим прання: 1-синтетика, 2-бавовна, 3-делiкатна, 4-швидке прання, 5-полоскання, 6-вiджим  "))
+        temp_input = int(input("Оберiть температуру прання: 1-30; 2-60; 3-90?:  "))
+        obert_speed = to_speed(int(input("Оберiть швидкiсть машинки для вiджиму: 1-200, 2-400, 3-600, 4-800, 5-1000, 6-1200 ")))
+        temp = to_temp(temp_input)
         time = int(round(calculate_time(rezhim, temp, obert_speed)))
-        input("Стирка займе " + str(time) + " секунд" + 
-              ". Натисніть Enter щоб розпочати стирку")
+        input("Прання займе " + str(time+calculate_time(5, temp, obert_speed)+calculate_time(6, temp, obert_speed)) + " секунд. Натиснiть Enter щоб розпочати його")
         countdown(time)
-    except ValueError:
-        print(ValueError)
-
+        prev_mode = rezhim
+    if prev_mode in [1,2,3,4]:
+        print("Починаю полоскання")
+        time = int(round(calculate_time(5, temp, obert_speed)))
+        countdown(time)
+        prev_mode = 5
+    if prev_mode == 5:
+        print("Починаю вiджим")
+        time = int(round(calculate_time(6, temp, obert_speed)))
+        countdown(time)
+        prev_mode = 6
+        input("Прання закiнчено. Натиснiть Enter щоб розпочати нове прання.")
